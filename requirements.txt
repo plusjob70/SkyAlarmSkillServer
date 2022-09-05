@@ -1,0 +1,4 @@
+Flask==2.2.2
+Flask-Script==2.0.6
+pymongo==4.2.0
+mongoengine==0.24.2

@@ -1,0 +1,14 @@
+{
+    "CJU": ["GMP", "PUS", "TAE", "KWJ", "CJJ", "KUV", "RSU", "USN", "WJU", "KPO", "YNY"],
+    "GMP": ["PUS", "CJU", "USN", "KWJ", "KPO", "RSU"],
+    "YNY": ["CJU", "PUS", "TAE", "KWJ"],
+    "PUS": ["GMP", "CJU", "YNY"],
+    "KWJ": ["GMP", "YNY", "CJU"],
+    "USN": ["GMP", "CJU"],
+    "TAE": ["CJU", "YNY"],
+    "RSU": ["GMP", "CJU"],
+    "KPO": ["CJU", "GMP"],
+    "CJJ": ["CJU"],
+    "KUV": ["CJU"],
+    "WJU": ["CJU"]
+}
