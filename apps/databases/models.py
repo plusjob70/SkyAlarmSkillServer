@@ -6,11 +6,13 @@ class Route(Document):
     destination = StringField(required=True)
 
     meta = {
-        'allow_inheritance': True
+        'collection': 'routes'
     }
 
 
-class Alarm(Route):
+class Alarm(Document):
+    departure = StringField(required=True)
+    destination = StringField(required=True)
     register_datetime = DateTimeField(required=True)
     user_id = StringField(required=True)
     user_type = StringField(required=True)
@@ -18,9 +20,12 @@ class Alarm(Route):
     departure_date = DateField(required=True)
     age = StringField(required=True, default='adult')
 
+    meta = {
+        'collection': 'alarms'
+    }
 
 
-class Ticket(Route):
+class Ticket(Document):
     flight_id = StringField(default='None')
     airline = StringField(required=True)
     departure_datetime = DateTimeField(required=True)
@@ -29,4 +34,8 @@ class Ticket(Route):
     adult_fees = IntField(required=True)
     child_fees = IntField(required=True)
     search_datetime = DateTimeField(required=True)
+
+    meta = {
+        'collection': 'tickets'
+    }
 

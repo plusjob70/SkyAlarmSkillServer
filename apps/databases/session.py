@@ -1,29 +1,12 @@
 from config import DBConfig
-from mongoengine import *
-from models import *
+from mongoengine import connect
+from pymongo import MongoClient
 
 
-class DBSession:
-    def __init__(self):
-        self.db = dict()
+client = MongoClient(host=DBConfig.DB_URI)
+db = client.get_database(DBConfig.DB_NAME)
 
-    def open(self, name):
-        if name not in self.db:
-            self.db[name] = connect('alarms', host=DBConfig.DB_URI, authentication_source='admin', alias='alarms')
-        return self.db['name']
-
-    def close(self, name):
-        if name in self.db:
-            disconnect(alias=name)
-
-
-if __name__ == '__main__':
-    print(DBConfig.DB_URI)
-
-    alarms = connect(
-        host=DBConfig.DB_URI,
-        authentication_source='admin'
-    )
-
-    print(alarms)
+Routes = db.get_collection(DBConfig.COL_ROUTES)
+Alarms = db.get_collection(DBConfig.COL_ALARMS)
+Tickets = db.get_collection(DBConfig.COL_TICKETS)
 

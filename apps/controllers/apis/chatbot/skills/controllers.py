@@ -1,13 +1,10 @@
-from mongoengine.context_managers import *
-import mongoengine
 from flask import Blueprint, request
-from apps.common.response import ChatbotSkillResponse as Chatbot
-from apps.common.chatbot.replies import ChatbotReply
-from apps.databases.models import Alarm
+from apps.common.chatbot.response import ChatbotSkillResponse as Chatbot
+from apps.common.chatbot.form import ChatbotReply, ChatbotContext
+from apps.databases.session import Alarms
 from apps.log.logger import logger
-from apps.common.constants import DEFAULT_DATE, DATETIME_FORMAT, DATE_FORMAT, ALARM_LIST_LIMIT
+from apps.common.constants import DEFAULT_DATE, DATE_FORMAT
 from datetime import datetime
-from pprint import pprint
 from apps.common.exceptions import NotExistContext
 
 
@@ -44,16 +41,9 @@ def select_date_and_age():
     }
 
     context = {
-        'values': [{
-            'name': 'alarm_info',
-            'lifeSpan': 1,
-            'params': {
-                 'departure': departure,
-                 'destination': destination,
-                 'departure_date': departure_date,
-                 'age': age
-            }
-        }]
+        'values': [ChatbotContext('alarm_info', 1,
+                                  departure=departure, destination=destination,
+                                  departure_date=departure_date, age=age).to_dict()]
     }
 
     return Chatbot.response(template=template, context=context)
@@ -79,41 +69,29 @@ def register_alarm():
         user_type = user_info['user']['type']
         user_timezone = user_info['timezone']
 
-        logger.info(f"[{user_id[:13]}] register-alarm : {departure} -> {destination} ({departure_date})")
+        results = Alarms.insert_one({
+            'departure': departure,
+            'destination': destination,
+            'register_datetime': datetime.now(),
+            'user_id': user_id,
+            'user_type': user_type,
+            'user_timezone': user_timezone,
+            'departure_date': datetime.strptime(departure_date, DATE_FORMAT),
+            'age': age
+        })
 
-        with switch_collection(Alarm, 'alarms') as alarm:
-            alarm(
-                register_datetime=datetime.now(),
-                user_id=user_id,
-                user_type=user_type,
-                user_timezone=user_timezone,
-                departure=departure,
-                destination=destination,
-                departure_date=datetime.strptime(departure_date, DATE_FORMAT),
-                age=age
-            ).save()
-
-
-        # Alarm(
-        #     register_datetime=datetime.now(),
-        #     user_id=user_id,
-        #     user_type=user_type,
-        #     user_timezone=user_timezone,
-        #     departure=departure,
-        #     destination=destination,
-        #     departure_date=datetime.strptime(departure_date, DATE_FORMAT),
-        #     age=age
-        # ).save()
+        logger.info(f"[{user_id[:13]}] register-alarm : {departure} -> {destination} ({departure_date}) "
+                    f"db.tickets._id: {results.inserted_id}")
 
         template = {
-            'outputs': ChatbotReply.register_alarm_simple_text(remain=True)
+            'outputs': ChatbotReply.register_alarm_simple_text(succeed=True)
         }
 
-    except (mongoengine.connection.ConnectionFailure, NotExistContext) as e:
+    except (NotExistContext, KeyError) as e:
         logger.error(e)
 
         template = {
-            'outputs': ChatbotReply.register_alarm_simple_text(remain=False)
+            'outputs': ChatbotReply.register_alarm_simple_text(succeed=False)
         }
 
     return Chatbot.response(template=template)

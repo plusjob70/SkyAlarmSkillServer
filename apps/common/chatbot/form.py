@@ -4,6 +4,16 @@ from apps.common.lines import LINES
 from dictionary import Age
 
 
+class ChatbotContext:
+    def __init__(self, name, life, **params):
+        self.name = name
+        self.lifeSpan = life
+        self.params = params
+
+    def to_dict(self) -> dict:
+        return vars(self)
+
+
 class ChatbotReply:
     @staticmethod
     def select_route_simple_text() -> list[dict]:
@@ -81,16 +91,16 @@ class ChatbotReply:
         }]
 
     @staticmethod
-    def register_alarm_simple_text(remain: bool) -> list[dict]:
+    def register_alarm_simple_text(succeed: bool) -> list[dict]:
         return [{
             'simpleText': {
-                'text': '등록을 성공하였습니다.' if remain
+                'text': '등록을 성공하였습니다.' if succeed
                 else '등록에 실패하였습니다.\n처음부터 다시 진행해주세요.'
             }
         }]
 
     @staticmethod
-    def list_alarms_carousel(alarms) -> list:
+    def list_alarms_carousel(alarms) -> list[dict]:
         return [{
             'carousel': {
                 'type': 'itemCard',

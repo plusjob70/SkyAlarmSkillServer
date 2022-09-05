@@ -1,5 +1,5 @@
 from flask import Blueprint, request
-from apps.common.response import ChatbotParamValidResponse
+from apps.common.chatbot.response import ChatbotParamValidResponse
 
 
 app = Blueprint('apis_chatbot_validate', __name__, url_prefix='/apis/chatbot/validate')

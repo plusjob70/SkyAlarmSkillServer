@@ -29,7 +29,11 @@ class DBConfig:
     DB_HOST = JsonConfig.get('DB_HOST', LOCAL_HOST)
     DB_PORT = JsonConfig.get('DB_PORT', 27017)
     DB_NAME = JsonConfig.get('DB_NAME', 'test_db')
-    DB_URI = f'mongodb://{DB_USER_NAME}:{DB_USER_PWD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+    DB_URI = f'mongodb://{DB_USER_NAME}:{DB_USER_PWD}@{DB_HOST}:{DB_PORT}'
+
+    COL_ROUTES = 'routes'
+    COL_ALARMS = 'alarms'
+    COL_TICKETS = 'tickets'
 
 
 class APPConfig:
