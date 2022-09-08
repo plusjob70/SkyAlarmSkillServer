@@ -33,6 +33,7 @@ class DBConfig:
 
     COL_ROUTES = 'routes'
     COL_ALARMS = 'alarms'
+    COL_LOWEST = 'lowest'
     COL_TICKETS = 'tickets'
 
 
