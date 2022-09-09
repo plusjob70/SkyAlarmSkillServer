@@ -9,9 +9,14 @@ from apps.databases.session import Alarms, Lowest
 from apps.log.logger import logger
 from apps.common.constants import DEFAULT_DATE, DATE_DASH_FORMAT, ALARM_LIST_LIMIT
 from datetime import datetime
-from apps.common.exceptions import NotExistContext, ExceededAlarmCountLimit, NotExistObjectId
+from apps.common.exceptions import (
+    NotExistContext,
+    ExceededAlarmCountLimit,
+    NotExistObjectId,
+    NotReadyYet
+)
 from bson.objectid import ObjectId
-from pprint import pprint
+# from pprint import pprint
 
 
 app = Blueprint('apis_chatbot_skills', __name__, url_prefix='/apis/chatbot/skills')
@@ -95,7 +100,7 @@ def register_alarm():
         template = {'outputs': Reply.register_alarm_simple_text(Code.SUCCESS_INSERT)}
 
     except NotExistContext as e:
-        logger.error(e)
+        logger.warning(e)
         template = {'outputs': Reply.register_alarm_simple_text(Code.NOT_EXIST_CONTEXT_ERROR)}
 
     except KeyError as e:
@@ -103,7 +108,7 @@ def register_alarm():
         template = {'outputs': Reply.register_alarm_simple_text(Code.NOT_EXIST_ARGUMENT_ERROR)}
 
     except ExceededAlarmCountLimit as e:
-        logger.error(e)
+        logger.warning(e)
         template = {'outputs': Reply.register_alarm_simple_text(Code.EXCEEDED_REGISTER_LIMIT)}
 
     return Chatbot.response(template=template)
@@ -168,13 +173,13 @@ def detail_alarm():
 
         lowest: Optional[_DocumentType] = Lowest.find_one({'_id': lowest_id})
         if not lowest:
-            raise ...
+            raise NotReadyYet
 
         departure_datetime: datetime = lowest['departure_datetime']
         arrival_datetime: datetime = lowest['arrival_datetime']
-        airline = lowest['airline']
-        fee = lowest[age]
-        seat_class = lowest['seat_class']
+        airline: str = lowest['airline']
+        fee: int = lowest[age.lower()]
+        seat_class: str = lowest['seat_class']
 
         logger.info(f"[{user_id[:13]}] detail-alarm : {alarm_id}")
         template = {
@@ -183,11 +188,15 @@ def detail_alarm():
             )
         }
 
+    except NotReadyYet as e:
+        logger.warning(f"[{user_id[:13]}] detail-alarm : {e}")
+        template = {'outputs': Reply.detail_alarm_simple_text(Code.NOT_EXIST_LOWEST_WARNING)}
+
     except NotExistObjectId:
         template = {'outputs': Reply.detail_alarm_simple_text(Code.ALREADY_DELETED_ERROR)}
 
-    except KeyError:
+    except KeyError as e:
+        logger.warning(f"[{user_id[:13]}] detail-alarm : {e}")
         template = {'outputs': Reply.detail_alarm_simple_text(Code.NOT_EXIST_ARGUMENT_ERROR)}
 
     return Chatbot.response(template=template)
-

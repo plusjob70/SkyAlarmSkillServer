@@ -12,3 +12,7 @@ class NotExistObjectId(Exception):
     def __str__(self):
         return 'The corresponding ID does not exist.'
 
+
+class NotReadyYet(Exception):
+    def __str__(self):
+        return 'It is not ready yet'

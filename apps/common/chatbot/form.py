@@ -4,7 +4,7 @@ from apps.common.lines import LINES
 from apps.common.constants import *
 from dictionary import Age, Airports, Airlines
 from apps.common.chatbot.skill_template import *
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 class ChatbotContext:
@@ -39,53 +39,27 @@ class ChatbotReply:
     def select_date_and_age_item_card(
             departure: str, destination: str,
             departure_date: str, age: str
-    ) -> list[dict]:
-        return [{
-            'itemCard': {
-                "imageTitle": {
-                    "title": "등록 진행",
-                    "description": "아래 내용으로 최저가알림 등록을 진행합니다."
-                },
-                'title': '',
-                'description': '',
-                'itemList': [
-                    {
-                        'title': '노선',
-                        'description': f"{Airports[departure].location} ▶ {Airports[destination].location}"
-                    },
-                    {
-                        'title': '출발',
-                        'description': f"{Airports[departure].full_name} ({departure})"
-                    },
-                    {
-                        'title': '도착',
-                        'description': f"{Airports[destination].full_name} ({destination})"
-                    },
-                    {
-                        'title': '출발 날짜',
-                        'description': f'{departure_date}'
-                    },
-                    {
-                        'title': '연령',
-                        'description': f'{Age.CHILD.kor if age == Age.CHILD.eng else Age.ADULT.kor}'
-                    },
+    ) -> list[ItemCard]:
+        return [
+            ItemCard(
+                imageTitle=Obj(title="등록 진행", description="아래 내용으로 최저가알림 등록을 진행합니다."),
+                title='',
+                description='',
+                itemList=[
+                    Obj(title='노선', description=f"{Airports[departure].location} ▶ {Airports[destination].location}"),
+                    Obj(title='출발', description=f"{Airports[departure].full_name} ({departure})"),
+                    Obj(title='도착', description=f"{Airports[destination].full_name} ({destination})"),
+                    Obj(title='출발 날짜', description=f'{departure_date}'),
+                    Obj(title='연령', description=f"{Age[age].kor}")
                 ],
-                'itemListAlignment': 'right',
-                'buttons': [
-                    {
-                        'label': '네',
-                        'action': 'block',
-                        'blockId': REGISTER_ALARM_BLOCK,
-                    },
-                    {
-                        'label': '아니요',
-                        'action': 'block',
-                        'blockId': MAIN_EXIT_BLOCK
-                    }
+                itemListAlignment='right',
+                buttons=[
+                    Button(label='네', action='block', blockId=REGISTER_ALARM_BLOCK),
+                    Button(label='아니요', action='block', blockId=MAIN_EXIT_BLOCK)
                 ],
-                'buttonLayout': 'horizontal'
-            }
-        }]
+                buttonLayout='horizontal'
+            )
+        ]
 
     @staticmethod
     def register_alarm_simple_text(code: int) -> list[dict]:
@@ -114,12 +88,12 @@ class ChatbotReply:
                             Obj(title='노선',
                                 description=f"{Airports[alarm['departure']].location} ▶ "
                                             f"{Airports[alarm['destination']].location}"),
+                            Obj(title='출발 날짜',
+                                description=f"{alarm['departure_date'].strftime(DATE_KOR_FORMAT)}"),
                             Obj(title='출발',
                                 description=f"{Airports[alarm['departure']].full_name} ({alarm['departure']})"),
                             Obj(title='도착',
                                 description=f"{Airports[alarm['destination']].full_name} ({alarm['destination']})"),
-                            Obj(title='출발 날짜',
-                                description=f"{alarm['departure_date'].strftime(DATE_DASH_FORMAT)}"),
                             Obj(title='연령',
                                 description=f"{Age[alarm['age']].kor}")
                         ],
@@ -158,27 +132,40 @@ class ChatbotReply:
     def detail_alarm_item_card(departure: str, destination: str, age: str,
                                departure_datetime: datetime, arrival_datetime: datetime,
                                airline: str, fee: int, seat_class: str) -> list[ItemCard]:
+        departure_time: str = departure_datetime.strftime(TIME_COLON_FORMAT)
+        arrival_time: str = arrival_datetime.strftime(TIME_COLON_FORMAT)
+
+        hours, minutes = (lambda delta: (delta // 3600, (delta % 3600) // 60))(
+            int((arrival_datetime - departure_datetime).total_seconds())
+        )
+
+        flight_time: str = ''
+        if hours:
+            flight_time += f"{hours}시간"
+        if minutes:
+            flight_time += f" {minutes}분"
+
         return [
             ItemCard(
-                title=f"{departure} ▶ {destination}",
-                destination='',
+                imageTitle=Obj(
+                    title=f"{Airports[departure].location} ▶ {Airports[destination].location}",
+                    description=f"{departure_datetime.strftime(DATE_KOR_FORMAT)}"
+                ),
+                description='',
                 itemList=[
                     Obj(title='출발', description=f"{Airports[departure].full_name} ({departure})"),
                     Obj(title='도착', description=f"{Airports[destination].full_name} ({destination})"),
-                    Obj(title='출발 날짜', description=f"0000-00-00"),
-                    Obj(title='출발', description=f"{departure_datetime}"),
-                    Obj(title='도착', description=f"{arrival_datetime}"),
+                    Obj(title='비행 시간', description=f"{departure_time} ~ {arrival_time}"),
+                    Obj(title='', description=f"{flight_time}"),
                     Obj(title='항공사', description=f"{Airlines[airline].kor_name}"),
-                    Obj(title='좌석등급', description=seat_class),
+                    Obj(title='좌석 등급', description=seat_class),
                     Obj(title='연령', description=Age[age].kor)
                 ],
                 itemListAlignment='right',
                 itemListSummary=Obj(title='요금', description='{:,}원'.format(fee)),
                 buttons=[
-                    Button(label='btn1', action=''),
-                    Button(label='btn2', action='', blockId='')
-                ],
-                buttonLayout='horizontal'
+                    Button(label='예약하기', action='webLink', webLinkUrl=Airlines[airline].mo_page)
+                ]
             )
         ]
 
@@ -187,8 +174,9 @@ class ChatbotReply:
         match code:
             case Code.ALREADY_DELETED_ERROR | Code.NOT_EXIST_ARGUMENT_ERROR:
                 text = '존재하지 않는 알림입니다.'
+            case Code.NOT_EXIST_LOWEST_WARNING:
+                text = '아직 최저가가 업데이트 되지 않았습니다.'
             case _:
                 text = ''
 
         return [SimpleText(text=text)]
-
