@@ -24,8 +24,8 @@ app = Blueprint('apis_chatbot_skills', __name__, url_prefix='/apis/chatbot/skill
 
 @app.route('/select-route', methods=['POST'])
 def select_route():
-    data = request.json
-    departure = data['action']['detailParams']['departure']['value']
+    data: dict = request.json
+    departure: str = data['action']['detailParams']['departure']['value']
 
     template = {
         'outputs': Reply.select_route_simple_text(),
@@ -37,15 +37,14 @@ def select_route():
 
 @app.route('/select-date-age', methods=['POST'])
 def select_date_and_age():
-    data = request.json
+    data: dict = request.json
+    extra: dict = data['action']['clientExtra']
+    params: dict = data['action']['detailParams']
 
-    extra = data['action']['clientExtra']
-    params = data['action']['detailParams']
-
-    departure = extra.get('departure', '')
-    destination = extra.get('destination', '')
-    departure_date = params.get('departure_date', {}).get('origin', DEFAULT_DATE)
-    age = params.get('age', {}).get('value', '')
+    age: str = params.get('age', {}).get('value', '')
+    departure: str = extra.get('departure', '')
+    destination: str = extra.get('destination', '')
+    departure_date: str = params.get('departure_date', {}).get('origin', DEFAULT_DATE)
 
     template = {'outputs': Reply.select_date_and_age_item_card(departure, destination, departure_date, age)}
 
@@ -62,27 +61,28 @@ def select_date_and_age():
 
 @app.route('/register-alarm', methods=['POST'])
 def register_alarm():
-    data = request.json
-    context = data['contexts']
+    data: dict = request.json
+    context: list[dict] = data['contexts']
 
     try:
         if not context or context[0]['name'] != 'alarm_info':
             raise NotExistContext
 
-        user_info = data['userRequest']
-        user_id = user_info['user']['id']
+        user_info: dict = data['userRequest']
+        user_id: str = user_info['user']['id']
 
         if Alarms.count_documents({'user_id': user_id}) >= ALARM_LIST_LIMIT:
             raise ExceededAlarmCountLimit
 
-        user_type = user_info['user']['type']
-        user_timezone = user_info['timezone']
+        user_type: str = user_info['user']['type']
+        user_timezone: str = user_info['timezone']
 
-        params = context[0]['params']
-        departure = params['departure']['value']
-        destination = params['destination']['value']
-        departure_date = params['departure_date']['value']
-        age = params['age']['value']
+        params: dict = context[0]['params']
+
+        age: str = params['age']['value']
+        departure: str = params['departure']['value']
+        destination: str = params['destination']['value']
+        departure_date: str = params['departure_date']['value']
 
         results = Alarms.insert_one({
             'departure': departure,
@@ -116,11 +116,11 @@ def register_alarm():
 
 @app.route('/list-alarms', methods=['POST'])
 def list_alarms():
-    data = request.json
-    user_id = data['userRequest']['user']['id']
+    data: dict = request.json
+    user_id: str = data['userRequest']['user']['id']
 
     logger.info(f"[{user_id[:13]}] list-alarms")
-    alarms = Alarms.find({'user_id': user_id}).sort('departure_date')
+    alarms: Optional[_DocumentType] = Alarms.find({'user_id': user_id}).sort('departure_date')
 
     template = {'outputs': Reply.list_alarms_carousel(alarms)}
 
@@ -129,14 +129,14 @@ def list_alarms():
 
 @app.route('/delete-alarm', methods=['POST'])
 def delete_alarm():
-    data = request.json
-    user_id = data['userRequest']['user']['id']
-    extra = data['action']['clientExtra']
+    data: dict = request.json
+    user_id: str = data['userRequest']['user']['id']
+    extra: dict = data['action']['clientExtra']
 
     try:
-        alarm_id = extra['alarm_id']
+        alarm_id: str = extra['alarm_id']
 
-        results = Alarms.delete_one({'_id': ObjectId(alarm_id)})
+        results: Optional[_DocumentType] = Alarms.delete_one({'_id': ObjectId(alarm_id)})
 
         if not results.deleted_count:
             raise NotExistObjectId
@@ -155,9 +155,9 @@ def delete_alarm():
 
 @app.route('/detail-alarm', methods=['POST'])
 def detail_alarm():
-    data = request.json
-    user_id = data['userRequest']['user']['id']
-    extra = data['action']['clientExtra']
+    data: dict = request.json
+    user_id: str = data['userRequest']['user']['id']
+    extra: dict = data['action']['clientExtra']
 
     try:
         alarm_id: str = extra['alarm_id']

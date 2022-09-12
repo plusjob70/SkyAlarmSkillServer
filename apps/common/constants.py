@@ -1,5 +1,3 @@
-# TODO: Change __file__ name constant -> <?>
-
 DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%S'
 DATE_DASH_FORMAT = '%Y-%m-%d'
 DATE_KOR_FORMAT = '%Y년 %m월 %d일'

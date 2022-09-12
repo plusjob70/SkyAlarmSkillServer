@@ -1,50 +1,21 @@
 from flask import Blueprint, request
 from apps.common.chatbot.response import ChatbotParamValidResponse
+from apps.common.constants import DATE_DASH_FORMAT, DEFAULT_DATE
+from datetime import datetime, date
 
 
 app = Blueprint('apis_chatbot_validate', __name__, url_prefix='/apis/chatbot/validate')
 
 
-@app.route('/lines', methods=['POST'])
-def validate_lines():
-    print(request.json)
+@app.route('/departure_date', methods=['POST'])
+def validate_departure_date():
+    data: dict = request.json
 
-    data = request.json
-    try:
-        destination = data['value']['resolved']
+    departure_date_str: str = data.get('value', {}).get('origin', DEFAULT_DATE)
+    departure_date: date = datetime.strptime(departure_date_str, DATE_DASH_FORMAT).date()
 
-    except KeyError:
-        ...
+    delta: int = (departure_date - datetime.now().date()).days
 
-    return ChatbotParamValidResponse.fail()
-
-
-
-"""
-{
-    'bot': {
-        'id': '62dde66ac7d05102c2cd00a7!', 
-        'name': '알람봇'
-    }, 
-    'utterance': '202020\n', 
-    'params': {
-        'surface': 'BuilderBotTest', 
-        'ignoreMe': 'true'
-    }, 
-    'isInSlotFilling': True, 
-    'user': {
-        'id': 'aadbc134c8b80e823bd18d31e4650eebe29ca080171f4e89a9a0ea3ca10d165', 
-        'type': 'botUserKey', 
-        'properties': {
-            'botUserKey': 'aadbcb1c134c8b80e823bd18d31e4650eebe29ca080171f4e89a9a0ea3ca10d165', 
-            'bot_user_key': 'aadbcb1c134c8b80e823bd18d31e4650eebe29ca080171f4e89a9a0ea3ca10d165'
-        }
-    }, 
-    'value': {
-        'origin': '202020', 
-        'resolved': '202020'
-    }, 
-    'timezone': 'Asia/Seoul', 
-    'lang': 'kr'
-}
-"""
+    if delta < 2:
+        return ChatbotParamValidResponse.fail()
+    return ChatbotParamValidResponse.ok()

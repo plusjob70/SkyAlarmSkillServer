@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 
 
 class ChatbotContext:
-    def __init__(self, name: str, life: int, **params: dict):
+    def __init__(self, name: str, life: int, **params):
         self.name = name
         self.lifeSpan = life
         self.params = params
@@ -136,7 +136,8 @@ class ChatbotReply:
         arrival_time: str = arrival_datetime.strftime(TIME_COLON_FORMAT)
 
         hours, minutes = (lambda delta: (delta // 3600, (delta % 3600) // 60))(
-            int((arrival_datetime - departure_datetime).total_seconds())
+            int((arrival_datetime - departure_datetime).total_seconds()
+                )
         )
 
         flight_time: str = ''
@@ -155,8 +156,7 @@ class ChatbotReply:
                 itemList=[
                     Obj(title='출발', description=f"{Airports[departure].full_name} ({departure})"),
                     Obj(title='도착', description=f"{Airports[destination].full_name} ({destination})"),
-                    Obj(title='비행 시간', description=f"{departure_time} ~ {arrival_time}"),
-                    Obj(title='', description=f"{flight_time}"),
+                    Obj(title='비행 시간', description=f"{departure_time} ~ {arrival_time}\n{flight_time}"),
                     Obj(title='항공사', description=f"{Airlines[airline].kor_name}"),
                     Obj(title='좌석 등급', description=seat_class),
                     Obj(title='연령', description=Age[age].kor)
